@@ -30,14 +30,14 @@ class ByteReaderTest {
     @Test
     fun testReadU4() {
         val u4 = byteReader.readU4()
-        assertThat("u2 is not a hex string", u4, `is`(String::class.java))
-        assertThat("u2 is not four byte", u4.length, equalTo(8))
+        assertThat("u4 is not a hex string", u4, `is`(String::class.java))
+        assertThat("u4 is not four byte", u4.length, equalTo(8))
     }
 
     @Test
     fun testReadU8() {
         val u8 = byteReader.readU8()
-        assertThat("u2 is not a hex string", u8, `is`(String::class.java))
-        assertThat("u2 is not eight byte", u8.length, equalTo(16))
+        assertThat("u8 is not a hex string", u8, `is`(String::class.java))
+        assertThat("u8 is not eight byte", u8.length, equalTo(16))
     }
 }
