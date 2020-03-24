@@ -8,4 +8,8 @@ class Parser(private val byteReader: ByteReader) {
     fun parseMinorVersion(): MinorVersionInfo = MinorVersionInfo(byteReader.readU2())
 
     fun parseMajorVersion(): MajorVersionInfo = MajorVersionInfo(byteReader.readU2())
+
+    fun parseConstPool() {
+
+    }
 }
