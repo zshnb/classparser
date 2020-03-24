@@ -1,5 +1,6 @@
 package com.hdjnb.classparser
 
+import com.hdjnb.classparser.info.*
 import org.hamcrest.Matchers
 import org.hamcrest.core.IsEqual
 import org.junit.*
@@ -28,5 +29,20 @@ class ParserTest {
         val minorVersionInfo = parser.parseMinorVersion()
         val majorVersionInfo = parser.parseMajorVersion()
         assertThat(majorVersionInfo.value.toDouble(), Matchers.greaterThan(45.3))
+    }
+
+    @Test
+    fun testParseConstantPool() {
+        testParseMinorAndMajorVersion()
+        val constants = parser.parseConstPool()
+        assertThat(constants.size, Matchers.equalTo(2))
+        constants.forEach {
+            when {
+                it is ConstantClassInfo -> {
+                    assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_CLASS_INFO))
+                    assertThat(it.nameIndex, Matchers.lessThan(65535))
+                }
+            }
+        }
     }
 }

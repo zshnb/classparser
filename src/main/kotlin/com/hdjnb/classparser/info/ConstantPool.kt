@@ -17,5 +17,22 @@ enum class Tag(val flag: Int) {
     CONSTANT_DYNAMIC_INFO(17),
     CONSTANT_INVOKE_DYNAMIC_INFO(18),
     CONSTANT_MODULE_INFO(19),
-    CONSTANT_PACKAGE_INFO(20)
+    CONSTANT_PACKAGE_INFO(20);
+
+    companion object {
+        fun valueOf(flag: Int): Tag =
+            when (flag) {
+                1 -> CONSTANT_CLASS_INFO
+                else -> CONSTANT_CLASS_INFO
+            }
+    }
 }
+
+abstract class ConstantInfo
+
+data class ConstantUtf8Info(val tag: Tag,
+                            val length: Int,
+                            val bytes: String) : ConstantInfo()
+
+data class ConstantClassInfo(val tag: Tag,
+                             val nameIndex: Int) : ConstantInfo()
