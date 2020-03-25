@@ -42,6 +42,11 @@ class ParserTest {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_CLASS_INFO))
                     assertThat(it.nameIndex, Matchers.lessThan(65535))
                 }
+                it is ConstantUtf8Info -> {
+                    assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_UTF8_INFO))
+                    assertThat(it.length, Matchers.greaterThan(0))
+                    assertThat(it.bytes, Matchers.isA(String::class.java))
+                }
             }
         }
     }

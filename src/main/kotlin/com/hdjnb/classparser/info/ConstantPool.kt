@@ -36,3 +36,55 @@ data class ConstantUtf8Info(val tag: Tag,
 
 data class ConstantClassInfo(val tag: Tag,
                              val nameIndex: Int) : ConstantInfo()
+
+data class ConstantIntegerInfo(val tag: Tag,
+                               val bytes: Int): ConstantInfo()
+
+data class ConstantFloatInfo(val tag: Tag,
+                             val bytes: Float): ConstantInfo()
+
+data class ConstantLongInfo(val tag: Tag,
+                            val bytes: Long): ConstantInfo()
+
+data class ConstantDoubleInfo(val tag: Tag,
+                              val bytes: Double): ConstantInfo()
+
+data class ConstantStringInfo(val tag: Tag,
+                              val index: Int): ConstantInfo()
+
+data class ConstantFieldRefInfo(val tag: Tag,
+                                val classInfoIndex: Int,
+                                val nameAndTypeInfoIndex: Int)
+
+data class ConstantMethodRefInfo(val tag: Tag,
+                                 val classInfoIndex: Int,
+                                 val nameAndTypeInfoIndex: Int)
+
+data class ConstantInterfaceRefInfo(val tag: Tag,
+                                    val classInfoIndex: Int,
+                                    val nameAndTypeInfoIndex: Int)
+
+data class ConstantNameAndTypeInfo(val tag: Tag,
+                                   val nameIndex: Int,
+                                   val typeIndex: Int)
+
+data class ConstantMethodHandleInfo(val tag: Tag,
+                                    val referenceKind: Int,
+                                    val referenceIndex: Int)
+
+data class ConstantMethodTypeInfo(val tag: Tag,
+                                  val descriptorIndex: Int)
+
+data class ConstantDynamicInfo(val tag: Tag,
+                               val bootstrapMethodAttrIndex: Int,
+                               val nameAndTypeIndex: Int)
+
+data class ConstantInvokeDynamic(val tag: Tag,
+                                 val bootstrapMethodAttrIndex: Int,
+                                 val nameAndTypeIndex: Int)
+
+data class ConstantModuleInfo(val tag: Tag,
+                              val nameIndex: Int)
+
+data class ConstantPackageInfo(val tag: Tag,
+                               val nameIndex: Int)
