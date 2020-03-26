@@ -8,7 +8,8 @@ class BaseUtil {
 
         fun convertHexToInt(hex: String) = Integer.parseInt(hex, 16)
 
-        fun convertHexToString(hex: String): String = String(DatatypeConverter.parseHexBinary(hex))
+        fun convertHexToLong(hex: String) = java.lang.Long.parseLong(hex, 16)
 
+        fun convertHexToString(hex: String): String = String(DatatypeConverter.parseHexBinary(hex))
     }
 }

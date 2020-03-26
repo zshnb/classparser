@@ -35,7 +35,7 @@ class ParserTest {
     fun testParseConstantPool() {
         testParseMinorAndMajorVersion()
         val constants = parser.parseConstPool()
-        assertThat(constants.size, Matchers.equalTo(2))
+        assertThat(constants.size, Matchers.equalTo(39))
         constants.forEach {
             when {
                 it is ConstantClassInfo -> {
