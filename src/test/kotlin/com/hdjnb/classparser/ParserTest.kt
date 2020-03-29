@@ -148,4 +148,14 @@ class ParserTest {
             assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
         }
     }
+
+    @Test
+    fun testParseMethodInfos() {
+        testParseFieldInfos()
+        val methodInfos = parser.parseMethodInfos()
+        methodInfos.forEach {
+            assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constants.size))
+            assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
+        }
+    }
 }

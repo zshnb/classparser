@@ -72,6 +72,20 @@ class Parser(private val byteReader: ByteReader) {
         }
         return fieldInfos
     }
+
+    fun parseMethodInfos(): List<MethodInfo> {
+        val methodCount = convertHexToInt(byteReader.readU2())
+        val methodInfos = mutableListOf<MethodInfo>()
+        for (i in 0 until methodCount) {
+            val accessFlags = byteReader.readU2()
+            val nameIndex = convertHexToInt(byteReader.readU2())
+            val descriptorIndex = convertHexToInt(byteReader.readU2())
+            // TODO waiting to parse attributeInfo
+            methodInfos.add(MethodInfo(accessFlags, nameIndex, descriptorIndex, 0, emptyList()))
+        }
+        return methodInfos
+    }
+
     private fun parseConstantClassInfo(): ConstantClassInfo {
         val nameIndex = byteReader.readU2().toInt(10)
         return ConstantClassInfo(Tag.CONSTANT_CLASS_INFO, nameIndex)
