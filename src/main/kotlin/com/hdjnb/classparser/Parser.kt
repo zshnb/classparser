@@ -43,6 +43,22 @@ class Parser(private val byteReader: ByteReader) {
         return constants
     }
 
+    fun parseAccessFlagsInfo(): String = byteReader.readU2()
+
+    fun parseClassExtensionInfo(): ClassExtensionInfo {
+        val thisClassIndex = convertHexToInt(byteReader.readU2())
+        val superClassIndex = convertHexToInt(byteReader.readU2())
+        val classExtensionInfo = ClassExtensionInfo(thisClassIndex, superClassIndex)
+        val interfaceCount = convertHexToInt(byteReader.readU2())
+        if (interfaceCount > 0) {
+            val interfaceIndexes = mutableListOf<Int>()
+            for (i in 0 until interfaceCount) {
+                interfaceIndexes.add(convertHexToInt(byteReader.readU2()))
+            }
+            classExtensionInfo.interfaceIndexes = interfaceIndexes
+        }
+        return classExtensionInfo
+    }
     private fun parseConstantClassInfo(): ConstantClassInfo {
         val nameIndex = byteReader.readU2().toInt(10)
         return ConstantClassInfo(Tag.CONSTANT_CLASS_INFO, nameIndex)
@@ -139,4 +155,6 @@ class Parser(private val byteReader: ByteReader) {
         val nameIndex = convertHexToInt(byteReader.readU2())
         return ConstantPackageInfo(Tag.CONSTANT_PACKAGE_INFO, nameIndex)
     }
+
+
 }

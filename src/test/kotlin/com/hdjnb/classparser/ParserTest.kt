@@ -11,6 +11,8 @@ class ParserTest {
 
     private lateinit var byteReader: ByteReader
 
+    private lateinit var constants: List<ConstantInfo>
+
     @Before
     fun before() {
         byteReader = ByteReader(TestUtil.filePath)
@@ -34,7 +36,7 @@ class ParserTest {
     @Test
     fun testParseConstantPool() {
         testParseMinorAndMajorVersion()
-        val constants = parser.parseConstPool()
+        constants = parser.parseConstPool()
         assertThat(constants.size, Matchers.equalTo(39))
         constants.forEach {
             when {
@@ -110,6 +112,29 @@ class ParserTest {
                 * TODO I just want parse class file which version is below JDK8, so it's unnecessary to test module and
                 *      package info
                 * */
+            }
+        }
+    }
+
+    @Test
+    fun testParseAccessFlagsInfo() {
+        testParseConstantPool()
+        val accessFlagsInfo = parser.parseAccessFlagsInfo()
+        assertThat(accessFlagsInfo.length, Matchers.equalTo(4))
+    }
+
+    @Test
+    fun testParseClassExtensionInfo() {
+        testParseAccessFlagsInfo()
+        val classExtensionInfo = parser.parseClassExtensionInfo()
+        assertThat(classExtensionInfo.thisClassIndex, Matchers.greaterThan(0))
+        assertThat(classExtensionInfo.thisClassIndex, Matchers.lessThanOrEqualTo(constants.size))
+        assertThat(classExtensionInfo.superClassIndex, Matchers.greaterThan(0))
+        assertThat(classExtensionInfo.superClassIndex, Matchers.lessThanOrEqualTo(constants.size))
+        if (classExtensionInfo.interfaceIndexes.isNotEmpty()) {
+            classExtensionInfo.interfaceIndexes.forEach {
+                assertThat(it, Matchers.greaterThan(0))
+                assertThat(it, Matchers.lessThanOrEqualTo(constants.size))
             }
         }
     }
