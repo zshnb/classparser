@@ -138,4 +138,14 @@ class ParserTest {
             }
         }
     }
+
+    @Test
+    fun testParseFieldInfos() {
+        testParseClassExtensionInfo()
+        val fieldInfos = parser.parseFieldInfos()
+        fieldInfos.forEach {
+            assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constants.size))
+            assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
+        }
+    }
 }
