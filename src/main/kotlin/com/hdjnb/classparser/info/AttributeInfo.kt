@@ -1,3 +1,6 @@
 package com.hdjnb.classparser.info
 
-class AttributeInfo()
+abstract class AttributeInfo
+
+data class AttributeCodeInfo(val attributeNameIndex: Int,
+                             val attributeLength: Int)

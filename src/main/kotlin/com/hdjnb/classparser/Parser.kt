@@ -15,28 +15,79 @@ class Parser(private val byteReader: ByteReader) {
         MajorVersionInfo(convertHexToInt(byteReader.readU2()))
 
     fun parseConstPool(): List<ConstantInfo> {
-        val constantPoolCount = convertHexToInt(byteReader.readU2())
+        var constantPoolCount = convertHexToInt(byteReader.readU2())
         val constants = mutableListOf<ConstantInfo>()
-        for (i in 1 until constantPoolCount) {
+        while (constantPoolCount >= 0) {
             val flag = convertHexToInt(byteReader.readU1())
             when (flag) {
-                Tag.CONSTANT_CLASS_INFO.flag -> constants.add(parseConstantClassInfo())
-                Tag.CONSTANT_UTF8_INFO.flag -> constants.add(parseConstantUtf8Info())
-                Tag.CONSTANT_INTEGER_INFO.flag -> constants.add(parseConstantIntegerInfo())
-                Tag.CONSTANT_DOUBLE_INFO.flag -> constants.add(parseConstantDoubleInfo())
-                Tag.CONSTANT_FLOAT_INFO.flag -> constants.add(parseConstantFloatInfo())
-                Tag.CONSTANT_LONG_INFO.flag -> constants.add(parseConstantLongInfo())
-                Tag.CONSTANT_STRING_INFO.flag -> constants.add(parseConstantStringInfo())
-                Tag.CONSTANT_FIELD_REF_INFO.flag -> constants.add(parseConstantFieldRefInfo())
-                Tag.CONSTANT_METHOD_REF_INFO.flag -> constants.add(parseConstantMethodRefInfo())
-                Tag.CONSTANT_INTERFACE_METHOD_REF_INFO.flag -> constants.add(parseConstantInterfaceMethodRefInfo())
-                Tag.CONSTANT_NAME_AND_TYPE_INFO.flag -> constants.add(parseConstantNameAndTypeInfo())
-                Tag.CONSTANT_METHOD_HANDLE_INFO.flag -> constants.add(parseConstantMethodHandleInfo())
-                Tag.CONSTANT_METHOD_TYPE_INFO.flag -> constants.add(parseConstantMethodTypeInfo())
-                Tag.CONSTANT_DYNAMIC_INFO.flag -> constants.add(parseConstantDynamicInfo())
-                Tag.CONSTANT_INVOKE_DYNAMIC_INFO.flag -> constants.add(parseConstantInvokeDynamicInfo())
-                Tag.CONSTANT_MODULE_INFO.flag -> constants.add(parseConstantModuleInfo())
-                Tag.CONSTANT_PACKAGE_INFO.flag -> constants.add(parseConstantPackageInfo())
+                Tag.CONSTANT_CLASS_INFO.flag -> {
+                    constants.add(parseConstantClassInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_UTF8_INFO.flag -> {
+                    constants.add(parseConstantUtf8Info())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_INTEGER_INFO.flag -> {
+                    constants.add(parseConstantIntegerInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_DOUBLE_INFO.flag -> {
+                    constants.add(parseConstantDoubleInfo())
+                    constantPoolCount -= 2
+                }
+                Tag.CONSTANT_FLOAT_INFO.flag -> {
+                    constants.add(parseConstantFloatInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_LONG_INFO.flag -> {
+                    constants.add(parseConstantLongInfo())
+                    constantPoolCount -= 2
+                }
+                Tag.CONSTANT_STRING_INFO.flag -> {
+                    constants.add(parseConstantStringInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_FIELD_REF_INFO.flag -> {
+                    constants.add(parseConstantFieldRefInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_METHOD_REF_INFO.flag -> {
+                    constants.add(parseConstantMethodRefInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_INTERFACE_METHOD_REF_INFO.flag -> {
+                    constants.add(parseConstantInterfaceMethodRefInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_NAME_AND_TYPE_INFO.flag -> {
+                    constants.add(parseConstantNameAndTypeInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_METHOD_HANDLE_INFO.flag -> {
+                    constants.add(parseConstantMethodHandleInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_METHOD_TYPE_INFO.flag -> {
+                    constants.add(parseConstantMethodTypeInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_DYNAMIC_INFO.flag -> {
+                    constants.add(parseConstantDynamicInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_INVOKE_DYNAMIC_INFO.flag -> {
+                    constants.add(parseConstantInvokeDynamicInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_MODULE_INFO.flag -> {
+                    constants.add(parseConstantModuleInfo())
+                    constantPoolCount -= 1
+                }
+                Tag.CONSTANT_PACKAGE_INFO.flag -> {
+                    constants.add(parseConstantPackageInfo())
+                    constantPoolCount -= 1
+                }
             }
         }
 
@@ -87,7 +138,7 @@ class Parser(private val byteReader: ByteReader) {
     }
 
     private fun parseConstantClassInfo(): ConstantClassInfo {
-        val nameIndex = byteReader.readU2().toInt(10)
+        val nameIndex = convertHexToInt(byteReader.readU2())
         return ConstantClassInfo(Tag.CONSTANT_CLASS_INFO, nameIndex)
     }
 

@@ -37,7 +37,6 @@ class ParserTest {
     fun testParseConstantPool() {
         testParseMinorAndMajorVersion()
         constants = parser.parseConstPool()
-        assertThat(constants.size, Matchers.equalTo(39))
         constants.forEach {
             when {
                 it is ConstantClassInfo -> {
