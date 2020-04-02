@@ -5,6 +5,7 @@ abstract class AttributeInfo
 data class AttributeCodeInfo(val attributeNameIndex: Int,
                              val attributeLength: Int,
                              val maxStack: Int,
+                             val maxLocals: Int,
                              val codeLength: Int,
                              val code: List<String>,
                              val exceptionTableLength: Int,
