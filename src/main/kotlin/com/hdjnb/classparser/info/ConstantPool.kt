@@ -30,6 +30,8 @@ enum class Tag(val flag: Int) {
 
 abstract class ConstantInfo
 
+class EmptyConstantInfo : ConstantInfo()
+
 data class ConstantUtf8Info(val tag: Tag,
                             val length: Int,
                             val bytes: String) : ConstantInfo()

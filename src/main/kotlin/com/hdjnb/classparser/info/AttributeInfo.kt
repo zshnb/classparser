@@ -49,7 +49,7 @@ data class AttributeSourceFile(val attributeNameIndex: Int,
 
 data class AttributeSourceDebugExtension(val attributeNameIndex: Int,
                                          val attributeLength: Int,
-                                         val debugExtension: List<String>)
+                                         val debugExtension: List<String>) : AttributeInfo()
 
 data class AttributeConstantValue(val attributeNameIndex: Int,
                                   val attributeLength: Int,

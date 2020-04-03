@@ -13,7 +13,9 @@ import com.hdjnb.classparser.info.AttributeMethodParameters.Parameter
 import com.hdjnb.classparser.info.AttributeRuntimeVisibleAnnotations.Annotation
 
 class Parser(private val byteReader: ByteReader) {
-    private val constants: MutableList<ConstantInfo> = mutableListOf()
+    val constants: MutableList<ConstantInfo> = mutableListOf()
+
+    private val attributeInfos: MutableList<AttributeInfo> = mutableListOf()
 
     fun parseMagicNumber(): MagicNumberInfo = MagicNumberInfo(byteReader.readU4())
 
@@ -24,8 +26,9 @@ class Parser(private val byteReader: ByteReader) {
         MajorVersionInfo(convertHexToInt(byteReader.readU2()))
 
     fun parseConstPool() {
+        constants.add(EmptyConstantInfo())
         var constantPoolCount = convertHexToInt(byteReader.readU2())
-        while (constantPoolCount >= 0) {
+        while (constantPoolCount > 1) {
             val flag = convertHexToInt(byteReader.readU1())
             when (flag) {
                 Tag.CONSTANT_CLASS_INFO.flag -> {
@@ -42,6 +45,7 @@ class Parser(private val byteReader: ByteReader) {
                 }
                 Tag.CONSTANT_DOUBLE_INFO.flag -> {
                     constants.add(parseConstantDoubleInfo())
+                    constants.add(EmptyConstantInfo())
                     constantPoolCount -= 2
                 }
                 Tag.CONSTANT_FLOAT_INFO.flag -> {
@@ -50,6 +54,7 @@ class Parser(private val byteReader: ByteReader) {
                 }
                 Tag.CONSTANT_LONG_INFO.flag -> {
                     constants.add(parseConstantLongInfo())
+                    constants.add(EmptyConstantInfo())
                     constantPoolCount -= 2
                 }
                 Tag.CONSTANT_STRING_INFO.flag -> {
@@ -124,8 +129,23 @@ class Parser(private val byteReader: ByteReader) {
             val accessFlags = byteReader.readU2()
             val nameIndex = convertHexToInt(byteReader.readU2())
             val descriptorIndex = convertHexToInt(byteReader.readU2())
-            // TODO waiting to parse attributeInfo
-            fieldInfos.add(FieldInfo(accessFlags, nameIndex, descriptorIndex, 0, emptyList()))
+            val attributeCount = convertHexToInt(byteReader.readU2())
+            val attributes = if (attributeCount > 0) {
+                (0 until attributeCount).map {
+                    val attributeNameIndex = convertHexToInt(byteReader.readU2())
+                    when ((constants[attributeNameIndex] as ConstantUtf8Info).bytes) {
+                        "ConstantValue" -> parseAttributeConstantValue(attributeNameIndex)
+                        "Deprecated" -> parseAttributeDeprecated(attributeNameIndex)
+                        "Signature" -> parseAttributeSignature(attributeNameIndex)
+                        "Synthetic" -> parseAttributeSynthetic(attributeNameIndex)
+                        "RuntimeVisibleAnnotations" -> parseAttributeRuntimeVisibleAnnotations(attributeNameIndex)
+                        else -> throw Exception("Unsupported attribute type:[${constants[attributeNameIndex]}] in field info")
+                    }
+                }
+            } else {
+                emptyList()
+            }
+            fieldInfos.add(FieldInfo(accessFlags, nameIndex, descriptorIndex, attributeCount, attributes))
         }
         return fieldInfos
     }
@@ -137,14 +157,43 @@ class Parser(private val byteReader: ByteReader) {
             val accessFlags = byteReader.readU2()
             val nameIndex = convertHexToInt(byteReader.readU2())
             val descriptorIndex = convertHexToInt(byteReader.readU2())
-            // TODO waiting to parse attributeInfo
-            methodInfos.add(MethodInfo(accessFlags, nameIndex, descriptorIndex, 0, emptyList()))
+            val attributeCount = convertHexToInt(byteReader.readU2())
+            val attributes = if (attributeCount > 0) {
+                (0 until attributeCount).map {
+                    val attributeNameIndex = convertHexToInt(byteReader.readU2())
+                    when ((constants[attributeNameIndex] as ConstantUtf8Info).bytes) {
+                        "Code" -> parseAttributeCodeInfo(attributeNameIndex)
+                        "Deprecated" -> parseAttributeDeprecated(attributeNameIndex)
+                        "Exceptions" -> parseAttributeExceptionsInfo(attributeNameIndex)
+                        "MethodParameters" -> parseAttributeMethodParameters(attributeNameIndex)
+                        "Signature" -> parseAttributeSignature(attributeNameIndex)
+                        "Synthetic" -> parseAttributeSynthetic(attributeNameIndex)
+                        "RuntimeVisibleAnnotations" -> parseAttributeRuntimeVisibleAnnotations(attributeNameIndex)
+                        else -> throw Exception("Unsupported attribute type:[${constants[attributeNameIndex]}] in method info")
+                    }
+                }
+            } else {
+                emptyList()
+            }
+            methodInfos.add(MethodInfo(accessFlags, nameIndex, descriptorIndex, attributeCount, attributes))
         }
         return methodInfos
     }
 
-    private fun parseAttributeCodeInfo(): AttributeCodeInfo {
+    fun parseAttributeInfos() {
         val attributeNameIndex = convertHexToInt(byteReader.readU2())
+        when ((constants[attributeNameIndex] as ConstantUtf8Info).bytes) {
+            "Deprecated" -> attributeInfos.add(parseAttributeDeprecated(attributeNameIndex))
+            "Signature" -> attributeInfos.add(parseAttributeSignature(attributeNameIndex))
+            "InnerClasses" -> attributeInfos.add(parseAttributeInnerClasses(attributeNameIndex))
+            "SourceFile" -> attributeInfos.add(parseAttributeSourceFile(attributeNameIndex))
+            "SourceDebugExtension" -> attributeInfos.add(parseAttributeSourceDebugExtension(attributeNameIndex))
+            "Synthetic" -> attributeInfos.add(parseAttributeSynthetic(attributeNameIndex))
+            "BootstrapMethods" -> attributeInfos.add(parseAttributeBootstrapMethods(attributeNameIndex))
+        }
+    }
+
+    private fun parseAttributeCodeInfo(attributeNameIndex: Int): AttributeCodeInfo {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val maxStack = convertHexToInt(byteReader.readU2())
         val maxLocals = convertHexToInt(byteReader.readU2())
@@ -169,15 +218,10 @@ class Parser(private val byteReader: ByteReader) {
             (0 until attributeCount).map {
                 val attributeNameIndex = convertHexToInt(byteReader.readU2())
                 when ((constants[attributeNameIndex] as ConstantUtf8Info).bytes) {
-                    "LineNumberTable" -> {
-                        parseAttributeLineNumberTable()
-                    }
-                    "LocalVariableTable" -> {
-                        parseAttributeLocalVariableTable()
-                    }
-                    "StackMapTable" -> {
-                        parseAttributeStackMapTable()
-                    }
+                    "LineNumberTable" -> parseAttributeLineNumberTable(attributeNameIndex)
+                    "LocalVariableTable" -> parseAttributeLocalVariableTable(attributeNameIndex)
+                    "StackMapTable" -> parseAttributeStackMapTable(attributeNameIndex)
+
                     else -> {
                         throw Exception("Unsupported attribute type in AttributeCodeInfo")
                     }
@@ -190,8 +234,7 @@ class Parser(private val byteReader: ByteReader) {
             exceptionTableLength, exceptionTable, attributeCount, attributes)
     }
 
-    private fun parseAttributeExceptionsInfo(): AttributeExceptionsInfo {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeExceptionsInfo(attributeNameIndex: Int): AttributeExceptionsInfo {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val numberOfExceptions = convertHexToInt(byteReader.readU2())
         val exceptionIndexTable = (0 until numberOfExceptions).map {
@@ -200,8 +243,7 @@ class Parser(private val byteReader: ByteReader) {
         return AttributeExceptionsInfo(attributeNameIndex, attributeLength, numberOfExceptions, exceptionIndexTable)
     }
 
-    private fun parseAttributeLineNumberTable(): AttributeLineNumberTable {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeLineNumberTable(attributeNameIndex: Int): AttributeLineNumberTable {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val lineNumberTableLength = convertHexToInt(byteReader.readU2())
         val lineNumberTable = (0 until lineNumberTableLength).map {
@@ -212,8 +254,7 @@ class Parser(private val byteReader: ByteReader) {
         return AttributeLineNumberTable(attributeNameIndex, attributeLength, lineNumberTableLength, lineNumberTable)
     }
 
-    private fun parseAttributeLocalVariableTable(): AttributeLocalVariableTable {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeLocalVariableTable(attributeNameIndex: Int): AttributeLocalVariableTable {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val localVariableTableLength = convertHexToInt(byteReader.readU2())
         val localVariableTable = (0 until localVariableTableLength).map {
@@ -227,15 +268,13 @@ class Parser(private val byteReader: ByteReader) {
         return AttributeLocalVariableTable(attributeNameIndex, attributeLength, localVariableTableLength, localVariableTable)
     }
 
-    private fun parseAttributeSourceFile(): AttributeSourceFile {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeSourceFile(attributeNameIndex: Int): AttributeSourceFile {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val sourceFileIndex = convertHexToInt(byteReader.readU2())
         return AttributeSourceFile(attributeNameIndex, attributeLength, sourceFileIndex)
     }
 
-    private fun parseAttributeSourceDebugExtension(): AttributeSourceDebugExtension {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeSourceDebugExtension(attributeNameIndex: Int): AttributeSourceDebugExtension {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val debugExtension = (0 until attributeLength).map {
             byteReader.readU1()
@@ -243,15 +282,13 @@ class Parser(private val byteReader: ByteReader) {
         return AttributeSourceDebugExtension(attributeNameIndex, attributeLength, debugExtension)
     }
 
-    private fun parseAttributeConstantValue(): AttributeConstantValue {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeConstantValue(attributeNameIndex: Int): AttributeConstantValue {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val constantValueIndex = convertHexToInt(byteReader.readU2())
         return AttributeConstantValue(attributeNameIndex, attributeLength, constantValueIndex)
     }
 
-    private fun parseAttributeInnerClasses(): AttributeInnerClasses {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeInnerClasses(attributeNameIndex: Int): AttributeInnerClasses {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val numberOfClasses = convertHexToInt(byteReader.readU2())
         val innerClasses = (0 until numberOfClasses).map {
@@ -264,37 +301,32 @@ class Parser(private val byteReader: ByteReader) {
         return AttributeInnerClasses(attributeNameIndex, attributeLength, numberOfClasses, innerClasses)
     }
 
-    private fun parseAttributeDeprecated(): AttributeDeprecated {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeDeprecated(attributeNameIndex: Int): AttributeDeprecated {
         val attributeLength = convertHexToInt(byteReader.readU4())
         return AttributeDeprecated(attributeNameIndex, attributeLength)
     }
 
-    private fun parseAttributeSynthetic(): AttributeSynthetic {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeSynthetic(attributeNameIndex: Int): AttributeSynthetic {
         val attributeLength = convertHexToInt(byteReader.readU4())
         return AttributeSynthetic(attributeNameIndex, attributeLength)
     }
 
-    private fun parseAttributeStackMapTable(): AttributeStackMapTable {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeStackMapTable(attributeNameIndex: Int): AttributeStackMapTable {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val numberOfEntries = convertHexToInt(byteReader.readU2())
         val stackMapFrameEntries = (0 until numberOfEntries).map {
-            byteReader.readU1()
+            byteReader.readU4()
         }
         return AttributeStackMapTable(attributeNameIndex, attributeLength, numberOfEntries, stackMapFrameEntries)
     }
 
-    private fun parseAttributeSignature(): AttributeSignature {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeSignature(attributeNameIndex: Int): AttributeSignature {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val signatureIndex = convertHexToInt(byteReader.readU2())
         return AttributeSignature(attributeNameIndex, attributeLength, signatureIndex)
     }
 
-    private fun parseAttributeBootstrapMethods(): AttributeBootstrapMethods {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeBootstrapMethods(attributeNameIndex: Int): AttributeBootstrapMethods {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val numberOfBootstrapMethods = convertHexToInt(byteReader.readU2())
         val bootstrapMethods = (0 until numberOfBootstrapMethods).map {
@@ -308,8 +340,7 @@ class Parser(private val byteReader: ByteReader) {
         return AttributeBootstrapMethods(attributeNameIndex, attributeLength, numberOfBootstrapMethods, bootstrapMethods)
     }
 
-    private fun parseAttributeMethodParameters(): AttributeMethodParameters {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeMethodParameters(attributeNameIndex: Int): AttributeMethodParameters {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val parametersCount = convertHexToInt(byteReader.readU1())
         val parameters = (0 until parametersCount).map {
@@ -320,8 +351,7 @@ class Parser(private val byteReader: ByteReader) {
         return AttributeMethodParameters(attributeNameIndex, attributeLength, parametersCount, parameters)
     }
 
-    private fun parseAttributeRuntimeVisibleAnnotations(): AttributeRuntimeVisibleAnnotations {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
+    private fun parseAttributeRuntimeVisibleAnnotations(attributeNameIndex: Int): AttributeRuntimeVisibleAnnotations {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val numberOfAnnotations = convertHexToInt(byteReader.readU2())
         val annotations = (0 until numberOfAnnotations).map {

@@ -36,75 +36,76 @@ class ParserTest {
     @Test
     fun testParseConstantPool() {
         testParseMinorAndMajorVersion()
-        constants = parser.parseConstPool()
+        parser.parseConstPool()
+        constants = parser.constants
         constants.forEach {
-            when {
-                it is ConstantClassInfo -> {
+            when (it) {
+                is ConstantClassInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_CLASS_INFO))
                     assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(65535))
                 }
-                it is ConstantUtf8Info -> {
+                is ConstantUtf8Info -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_UTF8_INFO))
                     assertThat(it.length, Matchers.greaterThan(0))
                     assertThat(it.bytes, Matchers.isA(String::class.java))
                 }
-                it is ConstantIntegerInfo -> {
+                is ConstantIntegerInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_INTEGER_INFO))
                     assertThat(it.bytes, Matchers.isA(Int::class.java))
                 }
-                it is ConstantFloatInfo -> {
+                is ConstantFloatInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_FLOAT_INFO))
                     assertThat(it.bytes, Matchers.isA(Float::class.java))
                 }
-                it is ConstantLongInfo -> {
+                is ConstantLongInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_LONG_INFO))
                     assertThat(it.bytes, Matchers.isA(Long::class.java))
                 }
-                it is ConstantDoubleInfo -> {
+                is ConstantDoubleInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_DOUBLE_INFO))
                     assertThat(it.bytes, Matchers.isA(Double::class.java))
                 }
-                it is ConstantStringInfo -> {
+                is ConstantStringInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_STRING_INFO))
                     assertThat(it.index, Matchers.lessThanOrEqualTo(65535))
                 }
-                it is ConstantFieldRefInfo -> {
+                is ConstantFieldRefInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_FIELD_REF_INFO))
                     assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
                     assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
                 }
-                it is ConstantMethodRefInfo -> {
+                is ConstantMethodRefInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_METHOD_REF_INFO))
                     assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
                     assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
                 }
-                it is ConstantInterfaceMethodRefInfo -> {
+                is ConstantInterfaceMethodRefInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_INTERFACE_METHOD_REF_INFO))
                     assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
                     assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
                 }
-                it is ConstantNameAndTypeInfo -> {
+                is ConstantNameAndTypeInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_NAME_AND_TYPE_INFO))
                     assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constants.size))
                     assertThat(it.typeIndex, Matchers.lessThanOrEqualTo(constants.size))
                 }
-                it is ConstantMethodHandleInfo -> {
+                is ConstantMethodHandleInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_METHOD_HANDLE_INFO))
                     assertThat(it.referenceKind, Matchers.isIn(listOf(1, 2, 3, 4, 5, 6, 7, 8, 9)))
                     assertThat(it.referenceIndex, Matchers.lessThanOrEqualTo(constants.size))
                 }
-                it is ConstantMethodTypeInfo -> {
+                is ConstantMethodTypeInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_METHOD_TYPE_INFO))
                     assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
                 }
-                it is ConstantDynamicInfo -> {
+                is ConstantDynamicInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_DYNAMIC_INFO))
-//                    assertThat(it.bootstrapMethodAttrIndex)
+        //                    assertThat(it.bootstrapMethodAttrIndex)
                     assertThat(it.nameAndTypeIndex, Matchers.lessThanOrEqualTo(constants.size))
                 }
-                it is ConstantInvokeDynamicInfo -> {
+                is ConstantInvokeDynamicInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_INVOKE_DYNAMIC_INFO))
-//                    assertThat(it.bootstrapMethodAttrIndex)
+        //                    assertThat(it.bootstrapMethodAttrIndex)
                     assertThat(it.nameAndTypeIndex, Matchers.lessThanOrEqualTo(constants.size))
                 }
                 /*
@@ -142,9 +143,13 @@ class ParserTest {
     fun testParseFieldInfos() {
         testParseClassExtensionInfo()
         val fieldInfos = parser.parseFieldInfos()
+        assertThat(fieldInfos.size, Matchers.greaterThan(0))
         fieldInfos.forEach {
             assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constants.size))
             assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
+            if (it.attributesCount > 0) {
+                assertThat(it.attributeInfos.size, Matchers.equalTo(it.attributesCount))
+            }
         }
     }
 
@@ -155,6 +160,9 @@ class ParserTest {
         methodInfos.forEach {
             assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constants.size))
             assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
+            if (it.attributesCount > 0) {
+                assertThat(it.attributeInfos.size, Matchers.equalTo(it.attributesCount))
+            }
         }
     }
 }
