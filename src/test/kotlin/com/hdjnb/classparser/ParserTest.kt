@@ -37,7 +37,7 @@ class ParserTest {
     fun testParseConstantPool() {
         testParseMinorAndMajorVersion()
         constantPool = parser.parseConstPool()
-
+        println(constantPool.toString())
         constantPool.constants.forEach {
             when (it) {
                 is ConstantClassInfo -> {
