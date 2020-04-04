@@ -2,6 +2,22 @@ package com.hdjnb.classparser.info
 
 abstract class AttributeInfo
 
+enum class Attribute(val attributeName: String) {
+    CODE("Code"),
+    CONSTANT_VALUE("ConstantValue"),
+    DEPRECATED("Deprecated"),
+    EXCEPTIONS("Exceptions"),
+    INNER_CLASSES("InnerClasses"),
+    LINE_NUMBER_TABLE("LineNumberTable"),
+    LOCAL_VARIABLE_TABLE("LocalVariableTable"),
+    STACK_MAP_TABLE("StackMapTable"),
+    SIGNATURE("Signature"),
+    SOURCE_FILE("SourceFile"),
+    SOURCE_DEBUG_EXTENSION("SourceDebugExtension"),
+    SYNTHETIC("Synthetic"),
+    BOOTSTRAP_METHODS("BootstrapMethods"),
+    METHOD_PARAMETERS("MethodParameters"),
+}
 data class AttributeCodeInfo(val attributeNameIndex: Int,
                              val attributeLength: Int,
                              val maxStack: Int,
