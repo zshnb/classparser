@@ -13,8 +13,6 @@ import com.hdjnb.classparser.info.AttributeMethodParameters.Parameter
 import com.hdjnb.classparser.info.AttributeRuntimeVisibleAnnotations.Annotation
 
 class Parser(private val byteReader: ByteReader) {
-    val constants: MutableList<ConstantInfo> = mutableListOf()
-
     private val attributeInfos: MutableList<AttributeInfo> = mutableListOf()
 
     fun parseMagicNumber(): MagicNumberInfo = MagicNumberInfo(byteReader.readU4())
@@ -25,84 +23,86 @@ class Parser(private val byteReader: ByteReader) {
     fun parseMajorVersion(): MajorVersionInfo =
         MajorVersionInfo(convertHexToInt(byteReader.readU2()))
 
-    fun parseConstPool() {
-        constants.add(EmptyConstantInfo())
-        var constantPoolCount = convertHexToInt(byteReader.readU2())
-        while (constantPoolCount > 1) {
+    fun parseConstPool(): ConstantPool {
+        var index = 1
+        val constantPoolCount = convertHexToInt(byteReader.readU2())
+        val constants = arrayOfNulls<ConstantInfo>(constantPoolCount)
+//        val constantPool = ConstantPool(constantPoolCount, constants)
+        while (index < constantPoolCount) {
             val flag = convertHexToInt(byteReader.readU1())
             when (flag) {
                 Tag.CONSTANT_CLASS_INFO.flag -> {
-                    constants.add(parseConstantClassInfo())
-                    constantPoolCount -= 1
+                    constants[index] = parseConstantClassInfo()
+                    index++
                 }
                 Tag.CONSTANT_UTF8_INFO.flag -> {
-                    constants.add(parseConstantUtf8Info())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantUtf8Info())
+                    index++
                 }
                 Tag.CONSTANT_INTEGER_INFO.flag -> {
-                    constants.add(parseConstantIntegerInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantIntegerInfo())
+                    index++
                 }
                 Tag.CONSTANT_DOUBLE_INFO.flag -> {
-                    constants.add(parseConstantDoubleInfo())
-                    constants.add(EmptyConstantInfo())
-                    constantPoolCount -= 2
+                    constants.set(index, parseConstantDoubleInfo())
+                    index += 2
                 }
                 Tag.CONSTANT_FLOAT_INFO.flag -> {
-                    constants.add(parseConstantFloatInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantFloatInfo())
+                    index++
                 }
                 Tag.CONSTANT_LONG_INFO.flag -> {
-                    constants.add(parseConstantLongInfo())
-                    constants.add(EmptyConstantInfo())
-                    constantPoolCount -= 2
+                    constants.set(index, parseConstantLongInfo())
+                    index += 2
                 }
                 Tag.CONSTANT_STRING_INFO.flag -> {
-                    constants.add(parseConstantStringInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantStringInfo())
+                    index++
                 }
                 Tag.CONSTANT_FIELD_REF_INFO.flag -> {
-                    constants.add(parseConstantFieldRefInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantFieldRefInfo())
+                    index++
                 }
                 Tag.CONSTANT_METHOD_REF_INFO.flag -> {
-                    constants.add(parseConstantMethodRefInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantMethodRefInfo())
+                    index++
                 }
                 Tag.CONSTANT_INTERFACE_METHOD_REF_INFO.flag -> {
-                    constants.add(parseConstantInterfaceMethodRefInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantInterfaceMethodRefInfo())
+                    index++
                 }
                 Tag.CONSTANT_NAME_AND_TYPE_INFO.flag -> {
-                    constants.add(parseConstantNameAndTypeInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantNameAndTypeInfo())
+                    index++
                 }
                 Tag.CONSTANT_METHOD_HANDLE_INFO.flag -> {
-                    constants.add(parseConstantMethodHandleInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantMethodHandleInfo())
+                    index++
                 }
                 Tag.CONSTANT_METHOD_TYPE_INFO.flag -> {
-                    constants.add(parseConstantMethodTypeInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantMethodTypeInfo())
+                    index++
                 }
                 Tag.CONSTANT_DYNAMIC_INFO.flag -> {
-                    constants.add(parseConstantDynamicInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantDynamicInfo())
+                    index++
                 }
                 Tag.CONSTANT_INVOKE_DYNAMIC_INFO.flag -> {
-                    constants.add(parseConstantInvokeDynamicInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantInvokeDynamicInfo())
+                    index++
                 }
                 Tag.CONSTANT_MODULE_INFO.flag -> {
-                    constants.add(parseConstantModuleInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantModuleInfo())
+                    index++
                 }
                 Tag.CONSTANT_PACKAGE_INFO.flag -> {
-                    constants.add(parseConstantPackageInfo())
-                    constantPoolCount -= 1
+                    constants.set(index, parseConstantPackageInfo())
+                    index++
                 }
             }
         }
+        @Suppress("UNCHECKED_CAST")
+        return ConstantPool(constantPoolCount, constants.toList() as List<ConstantInfo>)
     }
 
     fun parseAccessFlagsInfo(): String = byteReader.readU2()
@@ -122,7 +122,7 @@ class Parser(private val byteReader: ByteReader) {
         return classExtensionInfo
     }
 
-    fun parseFieldInfos(): List<FieldInfo> {
+    fun parseFieldInfos(constantPool: ConstantPool): List<FieldInfo> {
         val fieldCount = convertHexToInt(byteReader.readU2())
         val fieldInfos = mutableListOf<FieldInfo>()
         for (i in 0 until fieldCount) {
@@ -133,13 +133,13 @@ class Parser(private val byteReader: ByteReader) {
             val attributes = if (attributeCount > 0) {
                 (0 until attributeCount).map {
                     val attributeNameIndex = convertHexToInt(byteReader.readU2())
-                    when ((constants[attributeNameIndex] as ConstantUtf8Info).bytes) {
+                    when ((constantPool[attributeNameIndex] as ConstantUtf8Info).bytes) {
                         "ConstantValue" -> parseAttributeConstantValue(attributeNameIndex)
                         "Deprecated" -> parseAttributeDeprecated(attributeNameIndex)
                         "Signature" -> parseAttributeSignature(attributeNameIndex)
                         "Synthetic" -> parseAttributeSynthetic(attributeNameIndex)
                         "RuntimeVisibleAnnotations" -> parseAttributeRuntimeVisibleAnnotations(attributeNameIndex)
-                        else -> throw Exception("Unsupported attribute type:[${constants[attributeNameIndex]}] in field info")
+                        else -> throw Exception("Unsupported attribute type:[${constantPool[attributeNameIndex]}] in field info")
                     }
                 }
             } else {
@@ -150,7 +150,7 @@ class Parser(private val byteReader: ByteReader) {
         return fieldInfos
     }
 
-    fun parseMethodInfos(): List<MethodInfo> {
+    fun parseMethodInfos(constantPool: ConstantPool): List<MethodInfo> {
         val methodCount = convertHexToInt(byteReader.readU2())
         val methodInfos = mutableListOf<MethodInfo>()
         for (i in 0 until methodCount) {
@@ -161,15 +161,15 @@ class Parser(private val byteReader: ByteReader) {
             val attributes = if (attributeCount > 0) {
                 (0 until attributeCount).map {
                     val attributeNameIndex = convertHexToInt(byteReader.readU2())
-                    when ((constants[attributeNameIndex] as ConstantUtf8Info).bytes) {
-                        "Code" -> parseAttributeCodeInfo(attributeNameIndex)
+                    when ((constantPool[attributeNameIndex] as ConstantUtf8Info).bytes) {
+                        "Code" -> parseAttributeCodeInfo(attributeNameIndex, constantPool)
                         "Deprecated" -> parseAttributeDeprecated(attributeNameIndex)
                         "Exceptions" -> parseAttributeExceptionsInfo(attributeNameIndex)
                         "MethodParameters" -> parseAttributeMethodParameters(attributeNameIndex)
                         "Signature" -> parseAttributeSignature(attributeNameIndex)
                         "Synthetic" -> parseAttributeSynthetic(attributeNameIndex)
                         "RuntimeVisibleAnnotations" -> parseAttributeRuntimeVisibleAnnotations(attributeNameIndex)
-                        else -> throw Exception("Unsupported attribute type:[${constants[attributeNameIndex]}] in method info")
+                        else -> throw Exception("Unsupported attribute type:[${constantPool[attributeNameIndex]}] in method info")
                     }
                 }
             } else {
@@ -180,9 +180,9 @@ class Parser(private val byteReader: ByteReader) {
         return methodInfos
     }
 
-    fun parseAttributeInfos() {
+    fun parseAttributeInfos(constantPool: ConstantPool) {
         val attributeNameIndex = convertHexToInt(byteReader.readU2())
-        when ((constants[attributeNameIndex] as ConstantUtf8Info).bytes) {
+        when ((constantPool[attributeNameIndex] as ConstantUtf8Info).bytes) {
             "Deprecated" -> attributeInfos.add(parseAttributeDeprecated(attributeNameIndex))
             "Signature" -> attributeInfos.add(parseAttributeSignature(attributeNameIndex))
             "InnerClasses" -> attributeInfos.add(parseAttributeInnerClasses(attributeNameIndex))
@@ -190,10 +190,11 @@ class Parser(private val byteReader: ByteReader) {
             "SourceDebugExtension" -> attributeInfos.add(parseAttributeSourceDebugExtension(attributeNameIndex))
             "Synthetic" -> attributeInfos.add(parseAttributeSynthetic(attributeNameIndex))
             "BootstrapMethods" -> attributeInfos.add(parseAttributeBootstrapMethods(attributeNameIndex))
+            else -> throw Exception("Unsupported attribute type:[${constantPool[attributeNameIndex]}] in class info")
         }
     }
 
-    private fun parseAttributeCodeInfo(attributeNameIndex: Int): AttributeCodeInfo {
+    private fun parseAttributeCodeInfo(attributeNameIndex: Int, constantPool: ConstantPool): AttributeCodeInfo {
         val attributeLength = convertHexToInt(byteReader.readU4())
         val maxStack = convertHexToInt(byteReader.readU2())
         val maxLocals = convertHexToInt(byteReader.readU2())
@@ -217,7 +218,7 @@ class Parser(private val byteReader: ByteReader) {
         val attributes = if (attributeCount > 0) {
             (0 until attributeCount).map {
                 val attributeNameIndex = convertHexToInt(byteReader.readU2())
-                when ((constants[attributeNameIndex] as ConstantUtf8Info).bytes) {
+                when ((constantPool[attributeNameIndex] as ConstantUtf8Info).bytes) {
                     "LineNumberTable" -> parseAttributeLineNumberTable(attributeNameIndex)
                     "LocalVariableTable" -> parseAttributeLocalVariableTable(attributeNameIndex)
                     "StackMapTable" -> parseAttributeStackMapTable(attributeNameIndex)

@@ -11,7 +11,7 @@ class ParserTest {
 
     private lateinit var byteReader: ByteReader
 
-    private lateinit var constants: List<ConstantInfo>
+    private lateinit var constantPool: ConstantPool
 
     @Before
     fun before() {
@@ -36,9 +36,9 @@ class ParserTest {
     @Test
     fun testParseConstantPool() {
         testParseMinorAndMajorVersion()
-        parser.parseConstPool()
-        constants = parser.constants
-        constants.forEach {
+        constantPool = parser.parseConstPool()
+
+        constantPool.constants.forEach {
             when (it) {
                 is ConstantClassInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_CLASS_INFO))
@@ -71,42 +71,42 @@ class ParserTest {
                 }
                 is ConstantFieldRefInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_FIELD_REF_INFO))
-                    assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
-                    assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
+                    assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
+                    assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
                 }
                 is ConstantMethodRefInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_METHOD_REF_INFO))
-                    assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
-                    assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
+                    assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
+                    assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
                 }
                 is ConstantInterfaceMethodRefInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_INTERFACE_METHOD_REF_INFO))
-                    assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
-                    assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constants.size))
+                    assertThat(it.classInfoIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
+                    assertThat(it.nameAndTypeInfoIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
                 }
                 is ConstantNameAndTypeInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_NAME_AND_TYPE_INFO))
-                    assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constants.size))
-                    assertThat(it.typeIndex, Matchers.lessThanOrEqualTo(constants.size))
+                    assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
+                    assertThat(it.typeIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
                 }
                 is ConstantMethodHandleInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_METHOD_HANDLE_INFO))
                     assertThat(it.referenceKind, Matchers.isIn(listOf(1, 2, 3, 4, 5, 6, 7, 8, 9)))
-                    assertThat(it.referenceIndex, Matchers.lessThanOrEqualTo(constants.size))
+                    assertThat(it.referenceIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
                 }
                 is ConstantMethodTypeInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_METHOD_TYPE_INFO))
-                    assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
+                    assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
                 }
                 is ConstantDynamicInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_DYNAMIC_INFO))
         //                    assertThat(it.bootstrapMethodAttrIndex)
-                    assertThat(it.nameAndTypeIndex, Matchers.lessThanOrEqualTo(constants.size))
+                    assertThat(it.nameAndTypeIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
                 }
                 is ConstantInvokeDynamicInfo -> {
                     assertThat(it.tag, Matchers.equalTo(Tag.CONSTANT_INVOKE_DYNAMIC_INFO))
         //                    assertThat(it.bootstrapMethodAttrIndex)
-                    assertThat(it.nameAndTypeIndex, Matchers.lessThanOrEqualTo(constants.size))
+                    assertThat(it.nameAndTypeIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
                 }
                 /*
                 * TODO I just want parse class file which version is below JDK8, so it's unnecessary to test module and
@@ -128,13 +128,13 @@ class ParserTest {
         testParseAccessFlagsInfo()
         val classExtensionInfo = parser.parseClassExtensionInfo()
         assertThat(classExtensionInfo.thisClassIndex, Matchers.greaterThan(0))
-        assertThat(classExtensionInfo.thisClassIndex, Matchers.lessThanOrEqualTo(constants.size))
+        assertThat(classExtensionInfo.thisClassIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
         assertThat(classExtensionInfo.superClassIndex, Matchers.greaterThan(0))
-        assertThat(classExtensionInfo.superClassIndex, Matchers.lessThanOrEqualTo(constants.size))
+        assertThat(classExtensionInfo.superClassIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
         if (classExtensionInfo.interfaceIndexes.isNotEmpty()) {
             classExtensionInfo.interfaceIndexes.forEach {
                 assertThat(it, Matchers.greaterThan(0))
-                assertThat(it, Matchers.lessThanOrEqualTo(constants.size))
+                assertThat(it, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
             }
         }
     }
@@ -142,11 +142,11 @@ class ParserTest {
     @Test
     fun testParseFieldInfos() {
         testParseClassExtensionInfo()
-        val fieldInfos = parser.parseFieldInfos()
+        val fieldInfos = parser.parseFieldInfos(constantPool)
         assertThat(fieldInfos.size, Matchers.greaterThan(0))
         fieldInfos.forEach {
-            assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constants.size))
-            assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
+            assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
+            assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
             if (it.attributesCount > 0) {
                 assertThat(it.attributeInfos.size, Matchers.equalTo(it.attributesCount))
             }
@@ -156,10 +156,10 @@ class ParserTest {
     @Test
     fun testParseMethodInfos() {
         testParseFieldInfos()
-        val methodInfos = parser.parseMethodInfos()
+        val methodInfos = parser.parseMethodInfos(constantPool)
         methodInfos.forEach {
-            assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constants.size))
-            assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constants.size))
+            assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
+            assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
             if (it.attributesCount > 0) {
                 assertThat(it.attributeInfos.size, Matchers.equalTo(it.attributesCount))
             }
