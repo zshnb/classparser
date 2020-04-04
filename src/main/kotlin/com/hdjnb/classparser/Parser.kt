@@ -26,7 +26,7 @@ class Parser(private val byteReader: ByteReader) {
     fun parseConstPool(): ConstantPool {
         var index = 1
         val constantPoolCount = convertHexToInt(byteReader.readU2())
-        val constants = arrayOfNulls<ConstantInfo>(constantPoolCount)
+        val constants = arrayOfNulls<ConstantInfo?>(constantPoolCount)
         while (index < constantPoolCount) {
             val flag = convertHexToInt(byteReader.readU1())
             when (flag) {
@@ -100,8 +100,7 @@ class Parser(private val byteReader: ByteReader) {
                 }
             }
         }
-        @Suppress("UNCHECKED_CAST")
-        return ConstantPool(constantPoolCount, constants.toList() as List<ConstantInfo>)
+        return ConstantPool(constantPoolCount, constants.toList())
     }
 
     fun parseAccessFlagsInfo(): String = byteReader.readU2()

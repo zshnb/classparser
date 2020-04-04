@@ -22,7 +22,7 @@ enum class Tag(val flag: Int,
 }
 
 data class ConstantPool(val constantsCount: Int,
-                        val constants: List<ConstantInfo>) {
+                        val constants: List<ConstantInfo?>) {
     operator fun get(index: Int): ConstantUtf8Info = constants[index] as ConstantUtf8Info
 
     fun getConstantClassInfo(index: Int): ConstantClassInfo = constants[index] as ConstantClassInfo
