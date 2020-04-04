@@ -27,7 +27,6 @@ class Parser(private val byteReader: ByteReader) {
         var index = 1
         val constantPoolCount = convertHexToInt(byteReader.readU2())
         val constants = arrayOfNulls<ConstantInfo>(constantPoolCount)
-//        val constantPool = ConstantPool(constantPoolCount, constants)
         while (index < constantPoolCount) {
             val flag = convertHexToInt(byteReader.readU1())
             when (flag) {
@@ -36,67 +35,67 @@ class Parser(private val byteReader: ByteReader) {
                     index++
                 }
                 Tag.CONSTANT_UTF8_INFO.flag -> {
-                    constants.set(index, parseConstantUtf8Info())
+                    constants[index] = parseConstantUtf8Info()
                     index++
                 }
                 Tag.CONSTANT_INTEGER_INFO.flag -> {
-                    constants.set(index, parseConstantIntegerInfo())
+                    constants[index] = parseConstantIntegerInfo()
                     index++
                 }
                 Tag.CONSTANT_DOUBLE_INFO.flag -> {
-                    constants.set(index, parseConstantDoubleInfo())
+                    constants[index] = parseConstantDoubleInfo()
                     index += 2
                 }
                 Tag.CONSTANT_FLOAT_INFO.flag -> {
-                    constants.set(index, parseConstantFloatInfo())
+                    constants[index] = parseConstantFloatInfo()
                     index++
                 }
                 Tag.CONSTANT_LONG_INFO.flag -> {
-                    constants.set(index, parseConstantLongInfo())
+                    constants[index] = parseConstantLongInfo()
                     index += 2
                 }
                 Tag.CONSTANT_STRING_INFO.flag -> {
-                    constants.set(index, parseConstantStringInfo())
+                    constants[index] = parseConstantStringInfo()
                     index++
                 }
                 Tag.CONSTANT_FIELD_REF_INFO.flag -> {
-                    constants.set(index, parseConstantFieldRefInfo())
+                    constants[index] = parseConstantFieldRefInfo()
                     index++
                 }
                 Tag.CONSTANT_METHOD_REF_INFO.flag -> {
-                    constants.set(index, parseConstantMethodRefInfo())
+                    constants[index] = parseConstantMethodRefInfo()
                     index++
                 }
                 Tag.CONSTANT_INTERFACE_METHOD_REF_INFO.flag -> {
-                    constants.set(index, parseConstantInterfaceMethodRefInfo())
+                    constants[index] = parseConstantInterfaceMethodRefInfo()
                     index++
                 }
                 Tag.CONSTANT_NAME_AND_TYPE_INFO.flag -> {
-                    constants.set(index, parseConstantNameAndTypeInfo())
+                    constants[index] = parseConstantNameAndTypeInfo()
                     index++
                 }
                 Tag.CONSTANT_METHOD_HANDLE_INFO.flag -> {
-                    constants.set(index, parseConstantMethodHandleInfo())
+                    constants[index] = parseConstantMethodHandleInfo()
                     index++
                 }
                 Tag.CONSTANT_METHOD_TYPE_INFO.flag -> {
-                    constants.set(index, parseConstantMethodTypeInfo())
+                    constants[index] = parseConstantMethodTypeInfo()
                     index++
                 }
                 Tag.CONSTANT_DYNAMIC_INFO.flag -> {
-                    constants.set(index, parseConstantDynamicInfo())
+                    constants[index] = parseConstantDynamicInfo()
                     index++
                 }
                 Tag.CONSTANT_INVOKE_DYNAMIC_INFO.flag -> {
-                    constants.set(index, parseConstantInvokeDynamicInfo())
+                    constants[index] = parseConstantInvokeDynamicInfo()
                     index++
                 }
                 Tag.CONSTANT_MODULE_INFO.flag -> {
-                    constants.set(index, parseConstantModuleInfo())
+                    constants[index] = parseConstantModuleInfo()
                     index++
                 }
                 Tag.CONSTANT_PACKAGE_INFO.flag -> {
-                    constants.set(index, parseConstantPackageInfo())
+                    constants[index] = parseConstantPackageInfo()
                     index++
                 }
             }
@@ -110,11 +109,11 @@ class Parser(private val byteReader: ByteReader) {
     fun parseClassExtensionInfo(): ClassExtensionInfo {
         val thisClassIndex = convertHexToInt(byteReader.readU2())
         val superClassIndex = convertHexToInt(byteReader.readU2())
-        val classExtensionInfo = ClassExtensionInfo(thisClassIndex, superClassIndex)
-        val interfaceCount = convertHexToInt(byteReader.readU2())
-        if (interfaceCount > 0) {
+        val interfacesCount = convertHexToInt(byteReader.readU2())
+        val classExtensionInfo = ClassExtensionInfo(thisClassIndex, superClassIndex, interfacesCount)
+        if (interfacesCount > 0) {
             val interfaceIndexes = mutableListOf<Int>()
-            for (i in 0 until interfaceCount) {
+            for (i in 0 until interfacesCount) {
                 interfaceIndexes.add(convertHexToInt(byteReader.readU2()))
             }
             classExtensionInfo.interfaceIndexes = interfaceIndexes
