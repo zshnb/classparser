@@ -18,3 +18,5 @@ data class FieldInfo(val accessFlags: String,
     }
 }
 
+fun FieldInfo.toString(constantPool: ConstantPool): String =
+    "${constantPool[nameIndex].bytes}:${constantPool[descriptorIndex].bytes}"

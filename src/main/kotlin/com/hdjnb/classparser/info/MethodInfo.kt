@@ -22,3 +22,6 @@ data class MethodInfo(val accessFlags: String,
     }
 }
 
+fun MethodInfo.toString(constantPool: ConstantPool): String =
+    "${constantPool[nameIndex].bytes} ${constantPool[descriptorIndex].bytes}"
+

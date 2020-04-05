@@ -13,8 +13,6 @@ import com.hdjnb.classparser.info.AttributeMethodParameters.Parameter
 import com.hdjnb.classparser.info.AttributeRuntimeVisibleAnnotations.Annotation
 
 class Parser(private val byteReader: ByteReader) {
-    private val attributeInfos: MutableList<AttributeInfo> = mutableListOf()
-
     fun parseMagicNumber(): MagicNumberInfo = MagicNumberInfo(byteReader.readU4())
 
     fun parseMinorVersion(): MinorVersionInfo =
@@ -178,17 +176,24 @@ class Parser(private val byteReader: ByteReader) {
         return methodInfos
     }
 
-    fun parseAttributeInfos(constantPool: ConstantPool) {
-        val attributeNameIndex = convertHexToInt(byteReader.readU2())
-        when ((constantPool[attributeNameIndex] as ConstantUtf8Info).bytes) {
-            "Deprecated" -> attributeInfos.add(parseAttributeDeprecated(attributeNameIndex))
-            "Signature" -> attributeInfos.add(parseAttributeSignature(attributeNameIndex))
-            "InnerClasses" -> attributeInfos.add(parseAttributeInnerClasses(attributeNameIndex))
-            "SourceFile" -> attributeInfos.add(parseAttributeSourceFile(attributeNameIndex))
-            "SourceDebugExtension" -> attributeInfos.add(parseAttributeSourceDebugExtension(attributeNameIndex))
-            "Synthetic" -> attributeInfos.add(parseAttributeSynthetic(attributeNameIndex))
-            "BootstrapMethods" -> attributeInfos.add(parseAttributeBootstrapMethods(attributeNameIndex))
-            else -> throw Exception("Unsupported attribute type:[${constantPool[attributeNameIndex]}] in class info")
+    fun parseAttributeInfos(constantPool: ConstantPool): List<AttributeInfo> {
+        val attributeInfoCount = convertHexToInt(byteReader.readU2())
+        return if (attributeInfoCount > 0) {
+            (0 until attributeInfoCount).map {
+                val attributeNameIndex = convertHexToInt(byteReader.readU2())
+                when (constantPool[attributeNameIndex].bytes) {
+                    "Deprecated" -> parseAttributeDeprecated(attributeNameIndex)
+                    "Signature" -> parseAttributeSignature(attributeNameIndex)
+                    "InnerClasses" -> parseAttributeInnerClasses(attributeNameIndex)
+                    "SourceFile" -> parseAttributeSourceFile(attributeNameIndex)
+                    "SourceDebugExtension" -> parseAttributeSourceDebugExtension(attributeNameIndex)
+                    "Synthetic" -> parseAttributeSynthetic(attributeNameIndex)
+                    "BootstrapMethods" -> parseAttributeBootstrapMethods(attributeNameIndex)
+                    else -> throw Exception("Unsupported attribute type:[${constantPool[attributeNameIndex]}] in class info")
+                }
+            }
+        } else {
+            emptyList()
         }
     }
 

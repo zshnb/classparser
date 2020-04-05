@@ -27,7 +27,7 @@ class ParserTest {
 
     @Test
     fun testParseMinorAndMajorVersion() {
-        testParseMagicNumber()
+        parser.parseMagicNumber()
         val minorVersionInfo = parser.parseMinorVersion()
         val majorVersionInfo = parser.parseMajorVersion()
         assertThat(majorVersionInfo.value.toDouble(), Matchers.greaterThan(45.3))
@@ -35,9 +35,10 @@ class ParserTest {
 
     @Test
     fun testParseConstantPool() {
-        testParseMinorAndMajorVersion()
+        parser.parseMagicNumber()
+        parser.parseMinorVersion()
+        parser.parseMajorVersion()
         constantPool = parser.parseConstPool()
-        println(constantPool.toString())
         constantPool.constants.forEach {
             when (it) {
                 is ConstantClassInfo -> {
@@ -118,14 +119,21 @@ class ParserTest {
 
     @Test
     fun testParseAccessFlagsInfo() {
-        testParseConstantPool()
+        parser.parseMagicNumber()
+        parser.parseMinorVersion()
+        parser.parseMajorVersion()
+        parser.parseConstPool()
         val accessFlagsInfo = parser.parseAccessFlagsInfo()
         assertThat(accessFlagsInfo.length, Matchers.equalTo(4))
     }
 
     @Test
     fun testParseClassExtensionInfo() {
-        testParseAccessFlagsInfo()
+        parser.parseMagicNumber()
+        parser.parseMinorVersion()
+        parser.parseMajorVersion()
+        parser.parseConstPool()
+        parser.parseAccessFlagsInfo()
         val classExtensionInfo = parser.parseClassExtensionInfo()
         assertThat(classExtensionInfo.thisClassIndex, Matchers.greaterThan(0))
         assertThat(classExtensionInfo.thisClassIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
@@ -141,8 +149,16 @@ class ParserTest {
 
     @Test
     fun testParseFieldInfos() {
-        testParseClassExtensionInfo()
+        parser.parseMagicNumber()
+        parser.parseMinorVersion()
+        parser.parseMajorVersion()
+        constantPool = parser.parseConstPool()
+        parser.parseAccessFlagsInfo()
+        parser.parseClassExtensionInfo()
         val fieldInfos = parser.parseFieldInfos(constantPool)
+        fieldInfos.forEach {
+            println(it.toString(constantPool))
+        }
         assertThat(fieldInfos.size, Matchers.greaterThan(0))
         fieldInfos.forEach {
             assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
@@ -155,14 +171,39 @@ class ParserTest {
 
     @Test
     fun testParseMethodInfos() {
-        testParseFieldInfos()
+        parser.parseMagicNumber()
+        parser.parseMinorVersion()
+        parser.parseMajorVersion()
+        constantPool = parser.parseConstPool()
+        parser.parseAccessFlagsInfo()
+        parser.parseClassExtensionInfo()
+        parser.parseFieldInfos(constantPool)
         val methodInfos = parser.parseMethodInfos(constantPool)
+        methodInfos.forEach {
+            println(it.toString(constantPool))
+        }
         methodInfos.forEach {
             assertThat(it.nameIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
             assertThat(it.descriptorIndex, Matchers.lessThanOrEqualTo(constantPool.constantsCount))
             if (it.attributesCount > 0) {
                 assertThat(it.attributeInfos.size, Matchers.equalTo(it.attributesCount))
             }
+        }
+    }
+
+    @Test
+    fun testParseClassAttributeInfo() {
+        parser.parseMagicNumber()
+        parser.parseMinorVersion()
+        parser.parseMajorVersion()
+        constantPool = parser.parseConstPool()
+        parser.parseAccessFlagsInfo()
+        parser.parseClassExtensionInfo()
+        parser.parseFieldInfos(constantPool)
+        parser.parseMethodInfos(constantPool)
+        val attributeInfos = parser.parseAttributeInfos(constantPool)
+        attributeInfos.forEach {
+
         }
     }
 }
